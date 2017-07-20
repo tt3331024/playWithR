@@ -13,10 +13,14 @@ CTBC_url <- read_html('https://www.ctbcbank.com/CTCBPortalWeb/appmanager/ebank/r
 Taishin_url <- read_html('https://www.taishinbank.com.tw/TS/TS06/TS0605/TS060502/index.htm?urlPath1=TS02&urlPath2=TS0202')
 Taiwan_url <- read_html('http://rate.bot.com.tw/xrt?Lang=zh-TW')
 fubon_url <- read_html('https://ebank.taipeifubon.com.tw/B2C/cfhqu/cfhqu009/CFHQU009_Home.faces')
+Cathay_url <- read_html('https://www.cathaybk.com.tw/cathaybk/exchange/currency-billboard.asp')
 
-banks_ch <- c("台灣銀行", "玉山銀行", "中國信託", "台新銀行", "富邦銀行")
+
+banks_ch <- c("台灣銀行", "玉山銀行", "中國信託", "台新銀行", "富邦銀行", "國泰世華")
 currencies <- c('USD', 'JPY', 'KRW', 'CNY')
 
+
+## 台灣銀行 ##
 shinyServer(function(input, output) {
   
   Taiwan <- data.frame('kind' = c(CRB, CRS, SRB, SRS))
@@ -88,8 +92,23 @@ shinyServer(function(input, output) {
   }
   fubon <- fubon[order(fubon$kind),]
   
+  ##  國泰世華  ## 
+  Cathay <- data.frame('kind' = c(SRB, SRS, CRB, CRS))
+  for(c in currencies){
+    .m <- Cathay_url %>%
+      html_nodes(paste0('.icon_currency_', tolower(c))) %>%
+      xml_parent() %>% xml_parent()
+    .m <- .m %>% html_nodes('.t_align_right') %>% html_text()
+    if(length(.m) == 0){
+      .m <- c('--', '--', '--', '--')
+    }
+    .d <- matrix(.m, ncol = 1) %>% as.data.frame()
+    Cathay <- cbind(Cathay, .d)
+  }
+  Cathay <- Cathay[order(Cathay$kind),]
   
-  banks_en <- list(Taiwan, E.SUN, CTBC, Taishin, fubon)  
+  
+  banks_en <- list(Taiwan, E.SUN, CTBC, Taishin, fubon, Cathay)  
   
   USD <- sapply(banks_en, function(x) x[[2]]) %>% t() %>% as.data.frame(row.names = banks_ch) 
   JPY <- sapply(banks_en, function(x) x[[3]]) %>% t() %>% as.data.frame(row.names = banks_ch)

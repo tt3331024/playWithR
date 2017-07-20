@@ -1,6 +1,6 @@
 library(shiny)
 
-banks <- c("台灣銀行", "玉山銀行", "中國信託", "台新銀行", "富邦銀行")
+banks <- c("台灣銀行", "玉山銀行", "中國信託", "台新銀行", "富邦銀行", "國泰世華")
 
 shinyUI(fluidPage(
   title = 'Examples of DataTables',
