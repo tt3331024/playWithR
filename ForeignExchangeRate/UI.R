@@ -19,7 +19,6 @@ shinyUI(fluidPage(
         id = 'dataset',
         tabPanel('美元(USD)', DT::dataTableOutput("USD")),
         tabPanel('日幣(JPY)', DT::dataTableOutput("JPY")),
-        tabPanel('韓圜(KRW)', DT::dataTableOutput("KRW")),
         tabPanel('人民幣(CNY)', DT::dataTableOutput("CNY"))
       )
     )
