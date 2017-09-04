@@ -86,9 +86,10 @@ shinyServer(function(input, output) {
   Cathay <- data.frame('kind' = c(SRB, SRS, CRB, CRS))
   for(c in currencies){
     .m <- Cathay_url %>%
-      html_nodes(paste0('.icon_currency_', tolower(c))) %>%
+      html_nodes(paste0('i[style$="', c, '.png)"]')) %>%
       xml_parent() %>% xml_parent()
-    .m <- .m %>% html_nodes('.t_align_right') %>% html_text()
+    .m <- .m %>% html_nodes('font') %>% html_text()
+    .m <- .m[c(2,3,5,6)]
     .m <- sapply(.m, as.numeric)
     .d <- matrix(.m, ncol = 1) %>% as.data.frame()
     Cathay <- cbind(Cathay, .d)
