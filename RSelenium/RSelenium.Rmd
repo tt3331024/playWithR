@@ -1,0 +1,110 @@
+---
+title: "使用RSelenium擷取網頁畫面"
+author: "柯則宇"
+date: "2017年9月6日"
+output: html_document
+---
+
+## Selenium
+Selenium 是為瀏覽器自動化（Browser Automation）需求所設計的一套工具集合，讓程式可以直接驅動瀏覽器進行各種網站操作。  
+而 R 有 RSelenium 這個 package 可以操作 Selenium 來進行各種工作。
+有興趣可以看看下面的官方介紹！！  
+[RSelenium: Basics](https://cran.r-project.org/web/packages/RSelenium/vignettes/RSelenium-basics.html)  
+[RSelenium: Docker](https://cran.r-project.org/web/packages/RSelenium/vignettes/RSelenium-docker.html)
+
+### 安裝 RSelenium
+接下來就先安裝 RSelenium 吧!!
+使用 `install.packages("RSelenium")` 來安裝RSelenium。  
+安裝完成後，再來就是使用 RSelenium。  
+首先載入 package。  
+再來使用 `rsDriver()` 函式來開啟 Selenium 的 server 和 browser。其中 browser 的選擇可以是 chrome, firefox, phantomjs 甚至是 internet explorer都可以喔，只要你有該瀏覽器都行。  
+由於我們是要操作瀏覽器，所以要取出 client，讓後面的操作更順手。
+
+```{r, results='hide', message = FALSE, error = FALSE, warning = FALSE}
+library(RSelenium)
+rD <- rsDriver(browser = 'firefox')
+remDr <- rD$client
+```
+
+跑完上面的 code 後，firefox 瀏覽器就會在工具列打開。
+
+### 載入網頁
+firefox 開啟後，我們就可以選擇想要載入的網址。  
+使用 `navigate()` 函式來載入網頁，直接放入 URL 來載入該網頁。記得要加上引號喔。
+
+```{r}
+remDr$navigate("https://hortonworks.com/products/data-center/hdp/")
+```
+
+### 擷取畫面
+再來就進入本篇的重點----擷取網頁畫面！  
+我們可以使用 `screenshot()` 函式來擷取當前畫面，參數 `display = T` 代表要直接在 RStudio 上顯示擷取的畫面。
+
+```{r, fig.height = 10, fig.width = 10}
+remDr$screenshot(display = T)
+```
+![](C:/Users/tt/Desktop/Hortonworks.png) 
+
+執行成功後，應該可以在 RStudio 右下角的 Viewer 視窗看到截圖畫面。
+
+當然，擷取下來的圖也可以存成 .png 檔。
+根據下列官方文件的解說：  
+screenshot(display = FALSE, useViewer = TRUE, file = NULL)  
+Take a screenshot of the current page. The screenshot is returned as a base64 encoded PNG. If display is TRUE the screenshot is displayed locally. If useViewer is TRUE and RStudio is in use the screenshot is displayed in the RStudio viewer panel. If file is not NULL and display = FALSE the screenshot is written to the file denoted by file.  
+因此只需要將code改成:
+
+```{r}
+remDr$screenshot(file = "Hortonworks.png")
+```
+
+這樣子就可以把截圖抓下來了。  
+但如果想截取的畫面沒有顯示在視窗中，這時我們就需要靠 `findElements()` 和 `getElementLocation()` 兩個函式找出想截圖的元素位置。  
+
+```{r}
+# 先用 css selector 找到要截圖的元素
+ele_dataBox <- remDr$findElements('css selector', '.data-box')
+# 再取得該元素的位置座標
+ele_dataBox[[1]]$getElementLocation()
+```
+有了元素的座標，再配合使用 `executeScript()` 函式，來執行 javascript 操作滾輪，把畫面下拉，讓元素在畫面的中間。
+
+```{r}
+# .data-box 的最高點是 2074.067，為了讓元素在畫面中間，因此要把卷軸向上拉一點點，所以要在減 130
+remDr$executeScript(paste0('document.documentElement.scrollTop=', ele_dataBox[[1]]$getElementLocation()$y - 130))
+```
+
+這時候截圖，該元素就會位在畫面之中了
+
+```{r, fig.height = 10, fig.width = 10}
+remDr$screenshot(display = T)
+```
+![](C:/Users/tt/Desktop/Hortonworks1.png)
+
+另外，使用 `getElementLocationInView()` 函式也可以讓該元素呈現在畫面之中。  
+只是此時元素會在畫面的最底端，對於截圖而言有點不美觀。
+
+```{r}
+ele_dataBox[[1]]$getElementLocationInView()
+```
+```{r, fig.height = 10, fig.width = 10}
+remDr$screenshot(display = T)
+```
+![](C:/Users/tt/Desktop/Hortonworks2.png)
+
+### 收尾
+完成後可以執行 `close()` 函式來關閉瀏覽器的視窗。
+而 `server$stop()` 則是關閉 Selenium 的 server
+
+```{r}
+remDr$close()
+rD$server$stop()
+```
+
+如果上述動作沒做的話，下次要再使用 `rsDriver()` 可能會發生 port 被原本的 Selenium server 所佔用，而無法開啟。
+所以如果忘記 stop，也可以使用 `gc('rD')` 來清掃 rD 物件，刪除存在的程序。
+
+最後，也可以使用 `?remoteDriver` 來查看官方文件，裡面有介紹更多詳細的函式功能。
+
+或是直接連到官方[pdf說明文件](https://cran.r-project.org/web/packages/RSelenium/RSelenium.pdf)察看也可。
+
+以上就是使用 R 擷取網頁畫面的介紹。
